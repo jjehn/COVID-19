@@ -1,0 +1,13 @@
+name: covid-19
+title:
+username:
+account: jjehn
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1967342
+bundleId: 2899186
+url: https://jjehn.shinyapps.io/covid-19/
+when: 1584646053.01345
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: shiny-cheatsheet.pdf

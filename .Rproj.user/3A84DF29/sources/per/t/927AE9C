@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1584564071845.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "469863404",
+    "id" : "927AE9C",
+    "lastKnownWriteTime" : 1584568505,
+    "last_content_update" : 1584568505913,
+    "path" : "~/COVID-19/data_extraction_timeseries.R",
+    "project_path" : "data_extraction_timeseries.R",
+    "properties" : {
+        "cursorPosition" : "43,45",
+        "scrollLine" : "31",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
