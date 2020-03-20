@@ -2,6 +2,10 @@
 
 library (readr)
 
+library(ggplot2)
+
+library(reshape2)
+
 library(shiny)
 
 library(rsconnect)
@@ -11,6 +15,8 @@ library(rsconnect)
 # idea: https://shiny.rstudio.com/gallery/covid19-tracker.html
 
 ui <- fluidPage(
+  plotOutput(outputId = "timeseries"),
+  "Toggle the following parameters to get an understanding why restrictions such as social distancing are life-saving:",
   sliderInput(inputId = "deathrate", 
               label = "Set estimated death rate", 
               value = 1,
@@ -19,7 +25,11 @@ ui <- fluidPage(
                 label = "Calculate without effective restrictions?", 
                 value = F),
   uiOutput("slider_control"),
-  plotOutput(outputId = "table")
+  plotOutput(outputId = "barplot"),
+  "\n\nThe following plot shows the expected number of COVID-19 deaths on basis of the doubling time of the last 15 days:",
+  plotOutput(outputId = "estdevelopment"),
+  "Check out the code behind this App: ",
+  tags$a(href="https://github.com/jjehn/COVID-19", "https://github.com/jjehn/COVID-19")
 )
 
 server <- function(input, output) {
@@ -37,13 +47,13 @@ server <- function(input, output) {
   })
     
   
-  output$table <- renderPlot(
+  output$barplot <- renderPlot(
     { ## load data of COVID-19 deaths from Johns Hopkins GitHub
       urlfile <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv"
       deaths<-read.csv(url(urlfile))
       head(deaths)
       
-      ## reformate data
+      ## reformate data for estimate of infections up to date
       # get column number of today's data
       latest <- ncol(deaths)
       # reduce deaths to country and death numbers of today day
@@ -69,12 +79,112 @@ server <- function(input, output) {
       most_infected_countries <- head(deaths_data[order(deaths_data$infected_today, decreasing = T),],11)
       most_infected_countries <- most_infected_countries[-grep("China", most_infected_countries$Country.Region),]
       
-      # generate barplot
-      barplot(most_infected_countries$infected_today, 
-              main="Estimate of infected people up to date", horiz=F,
-              names.arg = most_infected_countries$Country.Region)
+      # generate basic barplot
+      #barplot(most_infected_countries$infected_today, 
+       #        main="Estimate of infected people up to date", horiz=F,
+        #       names.arg = most_infected_countries$Country.Region)
+      
+      # generate barplot with ggplot
+      ggplot(most_infected_countries, aes(x=Country.Region, y=infected_today)) +
+        geom_bar(stat="identity") +
+        ggtitle("Estimate of COVID-19 infected people up to date") +
+        xlab("Country") + ylab("Estimated number of infections")
       }
   )
+  
+  
+  output$timeseries <- renderPlot(
+    { ## load data of COVID-19 deaths from Johns Hopkins GitHub
+      urlfile <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv"
+      deaths<-read.csv(url(urlfile))
+      head(deaths)
+      
+      ## reformate data to plot time series
+      # remove regions and location information
+      deaths_timeseries <- deaths[,-c(1,3,4)]
+      # aggregate regional death numbers countrywise
+      deaths_timeseries <- aggregate(. ~ Country.Region, deaths_timeseries, sum)
+      # melt to have data in ggplot formate
+      meltdf <- melt(deaths_timeseries,id="Country.Region")
+      head(meltdf)
+      # remove X in month variable
+      meltdf$variable <- substring(meltdf$variable, 2)
+      # select only countries of interest for plot
+      today <- ncol(deaths_timeseries)
+      most_infected_countries <- deaths_timeseries[,c(1,today)]
+      colnames(most_infected_countries) <- c("Country.Region", "today")
+      most_infected_countries <- head(most_infected_countries[order(most_infected_countries$today, decreasing = T),],11)
+      countriesOI <- most_infected_countries$Country.Region
+      meltdf_most_infected <- meltdf[meltdf$Country.Region %in% countriesOI,]
+      # plot time series graph for countries of interest of cumulative deaths
+      ggplot(meltdf_most_infected,
+             aes(x=factor(variable, levels = unique(variable)),
+                 y=value,
+                 colour=Country.Region,
+                 group=Country.Region)
+      ) + geom_line() +
+        ggtitle("COVID-19 deaths in most infected countries") +
+        xlab("Date") + ylab("Cumulative Deaths")
+      
+      # show data for just one country
+      #meltdf[grep("China", meltdf$Country.Region),]
+      
+      }
+    )
+  
+  
+  output$estdevelopment <- renderPlot(
+    { ## load data of COVID-19 deaths from Johns Hopkins GitHub
+      urlfile <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv"
+      deaths<-read.csv(url(urlfile))
+      head(deaths)
+      
+      ## reformate data to calculate latest doubling time
+      # get column number of today's data
+      latest <- ncol(deaths)
+      # get column number of 14.3 days ago
+      pre14.3D <- latest-14
+      # remove regions and location information
+      estdevdata_data <- deaths[,-c(1,3,4)]
+      # aggregate regional death numbers countrywise
+      estdevdata_data <- aggregate(. ~ Country.Region, estdevdata_data, sum)
+      head(estdevdata_data)
+      # calculate latest doubling time
+      doublingtime <- 14.3/log2(estdevdata_data[,latest-3]/estdevdata_data[,pre14.3D-3])
+      # create subset of time series starting 13 days ago
+      estdevdata_data_subset <- estdevdata_data[,-(2:(pre14.3D-4))]
+      rownames(estdevdata_data_subset) <- estdevdata_data_subset$Country.Region
+      estdevdata_data_subset <- estdevdata_data_subset[,-1]
+      estdevdata_data_prognosis <- estdevdata_data_subset*2^(14.3/doublingtime)
+      head(estdevdata_data_prognosis)
+      estdevdata_data_prognosis$Country.Region <- rownames(estdevdata_data_prognosis)
+      
+      # melt to have data in ggplot formate
+      meltdf <- melt(estdevdata_data_prognosis,id="Country.Region")
+      head(meltdf)
+      # remove X in month variable
+      meltdf$variable <- substring(meltdf$variable, 2)
+      # select only countries of interest for plot
+      today <- ncol(estdevdata_data)
+      most_infected_countries <- estdevdata_data[,c(1,today)]
+      colnames(most_infected_countries) <- c("Country.Region", "today")
+      most_infected_countries <- head(most_infected_countries[order(most_infected_countries$today, decreasing = T),],11)
+      countriesOI <- most_infected_countries$Country.Region
+      meltdf_most_infected <- meltdf[meltdf$Country.Region %in% countriesOI,]
+      # plot time series graph for countries of interest of cumulative deaths
+      ggplot(meltdf_most_infected,
+             aes(x=factor(variable, levels = unique(variable)),
+                 y=value,
+                 colour=Country.Region,
+                 group=Country.Region)
+      ) + geom_line() +
+        ggtitle("COVID-19 death prognosis in most infected countries") +
+        xlab("Date-15") + ylab("Cumulative Deaths")
+      
+      
+      }
+    )
+  
 }
 
 shinyApp(ui = ui, server = server)
