@@ -49,7 +49,7 @@ server <- function(input, output) {
   
   output$barplot <- renderPlot(
     { ## load data of COVID-19 deaths from Johns Hopkins GitHub
-      urlfile <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv"
+      urlfile <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
       deaths<-read.csv(url(urlfile))
       head(deaths)
       
@@ -95,7 +95,7 @@ server <- function(input, output) {
   
   output$timeseries <- renderPlot(
     { ## load data of COVID-19 deaths from Johns Hopkins GitHub
-      urlfile <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv"
+      urlfile <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
       deaths<-read.csv(url(urlfile))
       head(deaths)
       
@@ -135,7 +135,7 @@ server <- function(input, output) {
   
   output$estdevelopment <- renderPlot(
     { ## load data of COVID-19 deaths from Johns Hopkins GitHub
-      urlfile <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv"
+      urlfile <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
       deaths<-read.csv(url(urlfile))
       head(deaths)
       
